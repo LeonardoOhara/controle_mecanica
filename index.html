@@ -411,6 +411,25 @@ function fmtDate(d){
    ============================================================ */
 const ADMIN_USER = 'admin';
 const ADMIN_PASS = 'admin123';
+const AUTH_STORAGE_KEY = 'oficina-control-auth';
+
+function setLoggedIn(loggedIn){
+  if(loggedIn){
+    localStorage.setItem(AUTH_STORAGE_KEY, 'true');
+  } else {
+    localStorage.removeItem(AUTH_STORAGE_KEY);
+  }
+}
+
+function showApp(){
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('app-screen').classList.remove('hidden');
+  loadData();
+}
+
+if(localStorage.getItem(AUTH_STORAGE_KEY) === 'true'){
+  showApp();
+}
 
 document.getElementById('login-form').addEventListener('submit', function(e){
   e.preventDefault();
@@ -419,15 +438,15 @@ document.getElementById('login-form').addEventListener('submit', function(e){
   const err = document.getElementById('login-error');
   if(u === ADMIN_USER && p === ADMIN_PASS){
     err.style.display = 'none';
-    document.getElementById('login-screen').classList.add('hidden');
-    document.getElementById('app-screen').classList.remove('hidden');
-    loadData();
+    setLoggedIn(true);
+    showApp();
   } else {
     err.style.display = 'block';
   }
 });
 
 document.getElementById('btn-logout').addEventListener('click', function(){
+  setLoggedIn(false);
   document.getElementById('app-screen').classList.add('hidden');
   document.getElementById('login-screen').classList.remove('hidden');
   document.getElementById('login-user').value = '';
