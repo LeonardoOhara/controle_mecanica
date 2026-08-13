@@ -314,6 +314,14 @@ tbody tr:hover { background: var(--surface-2); }
 .badge.finalizada { background: var(--teal-dim); color: var(--teal); }
 .badge.finalizada .seg i { opacity: 1; }
 
+/* Status específico para testes de baterias */
+.badge.boa { background: rgba(46, 204, 113, 0.12); color: #2ecc71; }
+.badge.boa .seg i { background: #2ecc71; opacity: 0.5; }
+.badge.ruim { background: rgba(231, 76, 60, 0.12); color: #e74c3c; }
+.badge.ruim .seg i { background: #e74c3c; opacity: 0.5; }
+.badge.zerada { background: rgba(149, 165, 166, 0.08); color: #95a5a6; }
+.badge.zerada .seg i { background: #95a5a6; opacity: 0.35; }
+
 .status-select {
   appearance: none;
   background: var(--surface-2);

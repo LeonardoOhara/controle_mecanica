@@ -22,6 +22,7 @@ function statusLabel() {
 function fieldsHtml(data = {}) {
   const tipo = data.tipo || '36v';
   const status = data.status || 'boa';
+  const observacao = data.observacao || '';
 
   return `
     <div class="grid-2">
@@ -46,6 +47,7 @@ function fieldsHtml(data = {}) {
         <option value="zerada" ${status === 'zerada' ? 'selected' : ''}>Zerada</option>
       </select>
     </div>
+    <div class="field"><label>Observação</label><textarea name="observacao" placeholder="Observações sobre o teste" maxlength="500" style="width:100%;min-height:64px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);padding:10px;border-radius:6px;">${escapeHtml(observacao)}</textarea></div>
   `;
 }
 
@@ -80,7 +82,7 @@ function renderTable() {
   if (!tbody) return;
 
   if (list.length === 0) {
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Nenhum teste encontrado. Clique em "+ Novo teste" para cadastrar.</td></tr>';
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="8">Nenhum teste encontrado. Clique em "+ Novo teste" para cadastrar.</td></tr>';
     return;
   }
 
@@ -91,6 +93,7 @@ function renderTable() {
       <td>${escapeHtml(item.marca)}</td>
       <td class="cell-mono">${escapeHtml(item.tipo)}</td>
       <td class="cell-mono">${escapeHtml(item.amperes)}</td>
+      <td>${escapeHtml(item.observacao || '')}</td>
       <td><span class="badge ${item.status}"><span class="seg"><i></i><i></i><i></i></span>${statusLabel()[item.status] || item.status}</span></td>
       <td>
         <div class="row-actions">
@@ -105,7 +108,13 @@ function renderTable() {
 function getFilteredList() {
   const search = (document.getElementById('baterias-search')?.value || '').toLowerCase();
   return getList()
-    .filter((item) => !search || item.marca.toLowerCase().includes(search) || item.tipo.toLowerCase().includes(search))
+    .filter((item) => {
+      if (!search) return true;
+      const marca = (item.marca || '').toLowerCase();
+      const tipoI = (item.tipo || '').toLowerCase();
+      const obs = (item.observacao || '').toLowerCase();
+      return marca.includes(search) || tipoI.includes(search) || obs.includes(search);
+    })
     .sort((a, b) => (b.data || '').localeCompare(a.data || ''));
 }
 
@@ -114,6 +123,7 @@ function exportReport(type) {
     Data: fmtDate(item.data),
     Quantidade: item.quantidade,
     Marca: item.marca,
+    Observação: item.observacao || '',
     Tipo: item.tipo,
     Amperes: item.amperes,
     Status: statusLabel()[item.status] || item.status
@@ -183,6 +193,7 @@ function addItem(formData, close) {
     marca: String(formData.get('marca')).trim(),
     tipo: String(formData.get('tipo')),
     amperes: String(formData.get('amperes')).trim(),
+    observacao: String(formData.get('observacao') || '').trim(),
     status: String(formData.get('status'))
   });
 
@@ -210,6 +221,7 @@ function editItem(id) {
         marca: String(formData.get('marca')).trim(),
         tipo: String(formData.get('tipo')),
         amperes: String(formData.get('amperes')).trim(),
+        observacao: String(formData.get('observacao') || '').trim(),
         status: String(formData.get('status'))
       });
 
