@@ -6,10 +6,6 @@ export function bindAuth() {
   const loginError = document.getElementById('login-error');
   const btnLogout = document.getElementById('btn-logout');
 
-  function setLoggedIn(value) {
-    localStorage.setItem(AUTH_KEY, value ? 'true' : 'false');
-  }
-
   function showApp() {
     if (loginScreen) loginScreen.classList.add('hidden');
     if (appScreen) appScreen.classList.remove('hidden');
@@ -25,16 +21,22 @@ export function bindAuth() {
   }
 
   if (loginForm) {
-    loginForm.addEventListener('submit', (event) => {
+    loginForm.addEventListener('submit', async (event) => {
       event.preventDefault();
       const user = document.getElementById('login-user')?.value.trim();
       const pass = document.getElementById('login-pass')?.value;
 
-      if (user === 'admin' && pass === 'admin123') {
-        setLoggedIn(true);
+      try {
+        const response = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user, password: pass })
+        });
+        if (!response.ok) throw new Error('login failed');
+        localStorage.setItem(AUTH_KEY, 'true');
         if (loginError) loginError.style.display = 'none';
         showApp();
-      } else {
+      } catch {
         if (loginError) loginError.style.display = 'block';
       }
     });
@@ -42,7 +44,8 @@ export function bindAuth() {
 
   if (btnLogout) {
     btnLogout.addEventListener('click', () => {
-      setLoggedIn(false);
+      fetch('/api/logout', { method: 'POST' }).catch(() => {});
+      localStorage.setItem(AUTH_KEY, 'false');
       showLogin();
       const loginUser = document.getElementById('login-user');
       const loginPass = document.getElementById('login-pass');
