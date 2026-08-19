@@ -37,12 +37,13 @@ export function analyzeBattery(data = {}) {
     charge = lower.charge + ((voltage - lower.voltage) / (upper.voltage - lower.voltage)) * (upper.charge - lower.charge);
   }
 
-  const health = voltage < minimum ? 'critico' : charge >= 50 ? 'normal' : 'atencao';
+  const health = voltage > maximum ? 'critico' : voltage < minimum ? 'critico' : charge >= 50 ? 'normal' : 'atencao';
   const healthLabel = { normal: 'Normal', atencao: 'Atenção', critico: 'Crítico', 'sem-analise': 'Sem análise' }[health];
-  const condition = charge === 100 ? 'completa' : charge >= 80 ? 'alta' : charge >= 50 ? 'nominal' : charge > 0 ? 'baixa' : 'critica';
-  const conditionLabel = { completa: 'Carga completa', alta: 'Carga alta', nominal: 'Carga nominal', baixa: 'Carga baixa', critica: 'Crítica / defeituosa' }[condition];
+  const condition = voltage > maximum ? 'sobrecarga' : charge === 100 ? 'completa' : charge >= 80 ? 'alta' : charge >= 50 ? 'nominal' : charge > 0 ? 'baixa' : 'critica';
+  const conditionLabel = { sobrecarga: 'Sobrecarga', completa: 'Carga completa', alta: 'Carga alta', nominal: 'Carga nominal', baixa: 'Carga baixa', critica: 'Crítica / defeituosa' }[condition];
   const diagnosis = [];
-  if (voltage < minimum) diagnosis.push('abaixo do corte BMS');
+  if (voltage > maximum) diagnosis.push('acima da voltagem máxima');
+  else if (voltage < minimum) diagnosis.push('abaixo do corte BMS');
   else if (data.estadoMedicao === 'carga') diagnosis.push('tensão sob carga; repetir em repouso');
   return {
     health,
@@ -183,6 +184,7 @@ function getReportSummary(list) {
     ['alta', 'Carga alta'],
     ['nominal', 'Carga nominal'],
     ['baixa', 'Carga baixa'],
+    ['sobrecarga', 'Sobrecarga'],
     ['critica', 'Crítica / defeituosa']
   ];
   const quantities = Object.fromEntries(conditions.map(([key]) => [key, 0]));

@@ -332,6 +332,7 @@ tbody tr:hover { background: var(--surface-2); }
 .condition-pill.completa, .condition-pill.alta { color: var(--teal); }
 .condition-pill.nominal { color: var(--amber); }
 .condition-pill.baixa { color: #f97316; }
+.condition-pill.sobrecarga { color: var(--danger); }
 .condition-pill.critica { color: var(--danger); }
 
 .status-select {
