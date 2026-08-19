@@ -321,6 +321,18 @@ tbody tr:hover { background: var(--surface-2); }
 .badge.ruim .seg i { background: #e74c3c; opacity: 0.5; }
 .badge.zerada { background: rgba(149, 165, 166, 0.08); color: #95a5a6; }
 .badge.zerada .seg i { background: #95a5a6; opacity: 0.35; }
+.badge.normal { background: var(--teal-dim); color: var(--teal); }
+.badge.normal .seg i { background: var(--teal); opacity: 1; }
+.badge.atencao { background: var(--amber-dim); color: var(--amber); }
+.badge.atencao .seg i:nth-child(1), .badge.atencao .seg i:nth-child(2) { background: var(--amber); opacity: 1; }
+.badge.critico { background: var(--danger-dim); color: var(--danger); }
+.badge.critico .seg i:nth-child(1) { background: var(--danger); opacity: 1; }
+.badge.sem-analise { background: rgba(149, 165, 166, 0.08); color: #95a5a6; }
+.condition-pill { display: inline-block; white-space: nowrap; font-size: 11px; font-weight: 700; }
+.condition-pill.completa, .condition-pill.alta { color: var(--teal); }
+.condition-pill.nominal { color: var(--amber); }
+.condition-pill.baixa { color: #f97316; }
+.condition-pill.critica { color: var(--danger); }
 
 .status-select {
   appearance: none;

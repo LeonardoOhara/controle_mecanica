@@ -114,7 +114,15 @@
       <section class="panel" id="panel-baterias">
         <div class="stats-row" id="baterias-stats"></div>
         <div class="toolbar">
-          <div class="grow"><input class="search-input" id="baterias-search" placeholder="Buscar por marca ou tipo de bateria..."></div>
+          <div class="grow"><input class="search-input" id="baterias-search" placeholder="Buscar por marca, tipo ou diagnóstico..."></div>
+          <select class="filter-select" id="baterias-condition-filter" aria-label="Filtrar por condição">
+            <option value="">Todas as condições</option>
+            <option value="completa">Carga completa (100%)</option>
+            <option value="alta">Carga alta (80-99%)</option>
+            <option value="nominal">Carga nominal (50-79%)</option>
+            <option value="baixa">Carga baixa (1-49%)</option>
+            <option value="critica">Crítica / defeituosa (0%)</option>
+          </select>
           <div class="toolbar-actions">
             <button class="btn-export pdf" type="button" data-panel="baterias" data-type="pdf">PDF</button>
             <button class="btn-export xlsx" type="button" data-panel="baterias" data-type="xlsx">.XLSX</button>
@@ -123,7 +131,7 @@
         </div>
         <table>
           <thead><tr>
-            <th>Data</th><th>Quantidade</th><th>Marca</th><th>Tipo</th><th>Amperes</th><th>Observação</th><th>Status</th><th style="width:90px;"></th>
+            <th>Data</th><th>Quantidade</th><th>Marca</th><th>Tipo</th><th>Voltagem medida</th><th>Amperes</th><th>Carga</th><th>Condição</th><th>Diagnóstico</th><th>Observação</th><th>Saúde</th><th style="width:90px;"></th>
           </tr></thead>
           <tbody id="baterias-tbody"></tbody>
         </table>

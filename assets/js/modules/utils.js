@@ -47,7 +47,7 @@ export function escapeHtml(str) {
   }[char]));
 }
 
-export function openModal({ title, fieldsHtml, onSubmit }) {
+export function openModal({ title, fieldsHtml, onSubmit, onOpen }) {
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
   overlay.innerHTML = `
@@ -67,6 +67,8 @@ export function openModal({ title, fieldsHtml, onSubmit }) {
   `;
 
   document.body.appendChild(overlay);
+  const formElement = overlay.querySelector('#dynamic-form');
+  if (onOpen) onOpen(formElement);
 
   const close = () => overlay.remove();
   overlay.querySelector('.modal-close').addEventListener('click', close);
