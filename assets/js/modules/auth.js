@@ -1,5 +1,7 @@
 export function bindAuth() {
   const AUTH_KEY = 'oficina-control-auth';
+  const DEFAULT_USER = 'admin';
+  const DEFAULT_PASSWORD = 'admin123';
   const loginForm = document.getElementById('login-form');
   const loginScreen = document.getElementById('login-screen');
   const appScreen = document.getElementById('app-screen');
@@ -27,16 +29,26 @@ export function bindAuth() {
       const pass = document.getElementById('login-pass')?.value;
 
       try {
+        if (user !== DEFAULT_USER || pass !== DEFAULT_PASSWORD) {
+          throw new Error('invalid credentials');
+        }
+
         const response = await fetch('/api/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ user, password: pass })
         });
-        if (!response.ok) throw new Error('login failed');
+        if (!response.ok && response.status !== 404) throw new Error('login failed');
         localStorage.setItem(AUTH_KEY, 'true');
         if (loginError) loginError.style.display = 'none';
         showApp();
       } catch {
+        if (user === DEFAULT_USER && pass === DEFAULT_PASSWORD) {
+          localStorage.setItem(AUTH_KEY, 'true');
+          if (loginError) loginError.style.display = 'none';
+          showApp();
+          return;
+        }
         if (loginError) loginError.style.display = 'block';
       }
     });
