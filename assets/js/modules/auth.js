@@ -23,34 +23,25 @@ export function bindAuth() {
   }
 
   if (loginForm) {
-    loginForm.addEventListener('submit', async (event) => {
+    loginForm.addEventListener('submit', (event) => {
       event.preventDefault();
       const user = document.getElementById('login-user')?.value.trim();
       const pass = document.getElementById('login-pass')?.value;
 
-      try {
-        if (user !== DEFAULT_USER || pass !== DEFAULT_PASSWORD) {
-          throw new Error('invalid credentials');
-        }
+      if (user !== DEFAULT_USER || pass !== DEFAULT_PASSWORD) {
+        if (loginError) loginError.style.display = 'block';
+        return;
+      }
 
-        const response = await fetch('/api/login', {
+      localStorage.setItem(AUTH_KEY, 'true');
+      if (loginError) loginError.style.display = 'none';
+      showApp();
+
+      fetch('/api/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ user, password: pass })
-        });
-        if (!response.ok && response.status !== 404) throw new Error('login failed');
-        localStorage.setItem(AUTH_KEY, 'true');
-        if (loginError) loginError.style.display = 'none';
-        showApp();
-      } catch {
-        if (user === DEFAULT_USER && pass === DEFAULT_PASSWORD) {
-          localStorage.setItem(AUTH_KEY, 'true');
-          if (loginError) loginError.style.display = 'none';
-          showApp();
-          return;
-        }
-        if (loginError) loginError.style.display = 'block';
-      }
+        }).catch(() => {});
     });
   }
 
