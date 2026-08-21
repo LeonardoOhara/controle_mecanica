@@ -26,8 +26,7 @@ function renderStats() {
 }
 
 function renderTable() {
-  const search = (document.getElementById('bikes-search')?.value || '').toLowerCase();
-  const list = getList().filter((bike) => !search || `${bike.codigo} ${bike.modelo}`.toLowerCase().includes(search));
+  const list = getFilteredList();
   const tbody = document.getElementById('bikes-tbody');
   if (!tbody) return;
   if (!list.length) {
@@ -46,7 +45,32 @@ function renderTable() {
 
 function getFilteredList() {
   const search = (document.getElementById('bikes-search')?.value || '').toLowerCase();
-  return getList().filter((bike) => !search || `${bike.codigo} ${bike.modelo}`.toLowerCase().includes(search)).sort((a, b) => (b.data || '').localeCompare(a.data || ''));
+  const dateFilter = document.getElementById('bikes-date-filter')?.value || '';
+  const startInput = document.getElementById('bikes-date-start');
+  const endInput = document.getElementById('bikes-date-end');
+  const { startDate, endDate } = getDateRange(dateFilter, startInput?.value, endInput?.value);
+  return getList().filter((bike) => {
+    const searchable = `${JSON.stringify(bike)} ${fmtDate(bike.data)}`.toLowerCase();
+    return (!search || searchable.includes(search))
+      && (!startDate || (bike.data || '') >= startDate)
+      && (!endDate || (bike.data || '') <= endDate);
+  }).sort((a, b) => (b.data || '').localeCompare(a.data || ''));
+}
+
+function getDateRange(filter, customStart, customEnd) {
+  if (filter === 'custom') return { startDate: customStart || '', endDate: customEnd || '' };
+  if (!filter) return { startDate: '', endDate: '' };
+  const today = new Date();
+  const current = today.toISOString().slice(0, 10);
+  if (filter === 'today') return { startDate: current, endDate: current };
+  if (filter === '7days') {
+    const start = new Date(today);
+    start.setDate(today.getDate() - 6);
+    return { startDate: start.toISOString().slice(0, 10), endDate: current };
+  }
+  if (filter === 'month') return { startDate: `${current.slice(0, 7)}-01`, endDate: current };
+  const previous = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+  return { startDate: previous.toISOString().slice(0, 10), endDate: new Date(today.getFullYear(), today.getMonth(), 0).toISOString().slice(0, 10) };
 }
 
 function serializeCollection(value) {
@@ -241,13 +265,13 @@ function editBike(id) {
 
 function movementFieldsHtml(bike) {
   const pieces = (bike.pecas || []).map((peca) => `<span class="bike-piece">${escapeHtml(peca.nome)}</span>`).join('') || '<span class="muted-text">Nenhuma peça instalada.</span>';
-  const history = (bike.historico || []).slice().reverse().map((move) => `<div class="bike-history-row"><div class="bike-history-meta"><span class="cell-mono">${fmtDate(move.data)}</span><span class="history-time">${escapeHtml(move.hora || '')}</span></div><strong class="movement-${move.acao}">${move.acao === 'retirada' ? 'RETIRADA' : 'INSTALADA'}</strong><div class="bike-history-detail"><span class="bike-history-piece">${escapeHtml(move.peca)}</span>${move.observacao ? `<span class="muted-text">${escapeHtml(move.observacao)}</span>` : ''}</div></div>`).join('') || '<div class="bike-history-empty"><span aria-hidden="true">—</span><span>Nenhum movimento registrado.</span></div>';
+  const history = (bike.historico || []).slice().reverse().map((move) => `<div class="bike-history-row"><div class="bike-history-meta"><span class="cell-mono">${fmtDate(move.data)}</span><span class="history-time">${escapeHtml(move.hora || '')}</span></div><strong class="movement-${move.acao}">${move.acao === 'retirada' ? 'RETIRADA' : 'INSTALADA'}</strong><div class="bike-history-detail"><span class="bike-history-piece">${escapeHtml(move.peca)}</span></div></div>`).join('') || '<div class="bike-history-empty"><span aria-hidden="true">—</span><span>Nenhum movimento registrado.</span></div>';
   return `<div class="bike-modal-context"><strong>${escapeHtml(bike.codigo)}</strong><span>${escapeHtml(bike.modelo)}</span></div>
+    <div class="field"><label>Observação</label><textarea name="observacao" placeholder="Anotações sobre a bike" maxlength="1000">${escapeHtml(bike.observacao || '')}</textarea></div>
     <div class="field"><label>Peças instaladas</label><div class="bike-piece-list">${pieces}</div></div>
     <div class="grid-2"><div class="field"><label>Ação</label><select required name="acao"><option value="retirada">Retirada</option><option value="colocada">Instalada</option></select></div>
       <div class="field"><label>Data</label><input required type="text" name="data" inputmode="numeric" pattern="\\d{2}/\\d{2}/\\d{4}" placeholder="dd/mm/yyyy" maxlength="10" oninput="window.__formatDateInput(this)" value="${formatDateDisplay(new Date().toISOString().slice(0, 10))}"></div></div>
-    <div class="field"><label>Peça</label><input required type="text" name="peca" placeholder="Ex.: controlador, freio, display"></div>
-    <div class="field"><label>Observação</label><input type="text" name="observacao" placeholder="Motivo ou condição da peça"></div>
+    <div class="field"><label>Peça</label><input type="text" name="peca" placeholder="Ex.: controlador, freio, display"></div>
     <div class="bike-history"><label>Histórico de movimentos</label>${history}</div>`;
 }
 
@@ -256,13 +280,16 @@ function manageBike(id) {
   if (!bike) return;
   openModal({ title: 'Movimentar peças', fieldsHtml: movementFieldsHtml(bike), onSubmit: (formData, close) => {
     const list = getList(); const current = list.find((item) => item.id === id); if (!current) return;
-    const peca = String(formData.get('peca')).trim(); const acao = String(formData.get('acao')); const normalized = peca.toLowerCase();
+    const peca = String(formData.get('peca') || '').trim(); const observacao = String(formData.get('observacao') || '').trim(); const acao = String(formData.get('acao')); const normalized = peca.toLowerCase();
+    current.observacao = observacao;
     current.pecas = current.pecas || []; current.historico = current.historico || [];
-    if (acao === 'retirada') current.pecas = current.pecas.filter((item) => item.nome.toLowerCase() !== normalized);
-    else if (!current.pecas.some((item) => item.nome.toLowerCase() === normalized)) current.pecas.push({ id: uid(), nome: peca });
-    const timestamp = new Date();
-    current.historico.push({ id: uid(), data: parseDateInput(String(formData.get('data'))), hora: timestamp.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }), acao, peca, observacao: String(formData.get('observacao')).trim() });
-    saveList(list); renderAll(); close(); showToast(acao === 'retirada' ? 'Retirada registrada.' : 'Peça colocada novamente.');
+    if (peca) {
+      if (acao === 'retirada') current.pecas = current.pecas.filter((item) => item.nome.toLowerCase() !== normalized);
+      else if (!current.pecas.some((item) => item.nome.toLowerCase() === normalized)) current.pecas.push({ id: uid(), nome: peca });
+      const timestamp = new Date();
+      current.historico.push({ id: uid(), data: parseDateInput(String(formData.get('data'))), hora: timestamp.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }), acao, peca });
+    }
+    saveList(list); renderAll(); close(); showToast(peca ? (acao === 'retirada' ? 'Retirada registrada.' : 'Peça colocada novamente.') : 'Observação salva.');
   } });
 }
 
@@ -272,8 +299,11 @@ function deleteBike(id) {
 }
 
 export function initBikes() {
-  const search = document.getElementById('bikes-search'); const addButton = document.getElementById('btn-add-bike'); const tbody = document.getElementById('bikes-tbody');
+  const search = document.getElementById('bikes-search'); const dateFilter = document.getElementById('bikes-date-filter'); const customDates = document.getElementById('bikes-date-custom'); const startDate = document.getElementById('bikes-date-start'); const endDate = document.getElementById('bikes-date-end'); const addButton = document.getElementById('btn-add-bike'); const tbody = document.getElementById('bikes-tbody');
   if (search) search.addEventListener('input', renderTable);
+  if (dateFilter) dateFilter.addEventListener('change', () => { customDates.hidden = dateFilter.value !== 'custom'; renderTable(); });
+  if (startDate) startDate.addEventListener('change', renderTable);
+  if (endDate) endDate.addEventListener('change', renderTable);
   if (addButton) addButton.addEventListener('click', () => openModal({ title: 'Nova bike', fieldsHtml: bikeFieldsHtml(), onSubmit: (formData, close) => saveBikeForm(formData, null, close) }));
   if (tbody) tbody.addEventListener('click', (event) => { const button = event.target.closest('button'); if (!button) return; const { action, id } = button.dataset; if (action === 'manage-bike') manageBike(id); if (action === 'edit-bike') editBike(id); if (action === 'delete-bike') deleteBike(id); });
   document.querySelectorAll('.btn-export[data-panel="bikes"]').forEach((button) => button.addEventListener('click', () => openReportDialog(button.dataset.type)));

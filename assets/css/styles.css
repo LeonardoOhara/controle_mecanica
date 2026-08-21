@@ -257,6 +257,9 @@ input, select { font-family: inherit; }
   outline: none;
 }
 .search-input:focus { border-color: var(--teal); }
+.date-filter { width: auto; min-width: 145px; }
+.date-custom { display: flex; gap: 8px; }
+.date-custom[hidden] { display: none; }
 .filter-select {
   min-width: 190px;
   background: var(--surface);

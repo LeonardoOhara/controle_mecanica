@@ -51,10 +51,7 @@ function renderStats() {
 }
 
 function renderTable() {
-  const search = (document.getElementById('manut-search')?.value || '').toLowerCase();
-  const list = getList()
-    .filter((item) => !search || item.nome.toLowerCase().includes(search) || item.mecanico.toLowerCase().includes(search) || item.modelo.toLowerCase().includes(search))
-    .sort((a, b) => (b.data || '').localeCompare(a.data || ''));
+  const list = getFilteredList();
 
   const tbody = document.getElementById('manut-tbody');
   if (!tbody) return;
@@ -83,9 +80,32 @@ function renderTable() {
 
 function getFilteredList() {
   const search = (document.getElementById('manut-search')?.value || '').toLowerCase();
-  return getList()
-    .filter((item) => !search || item.nome.toLowerCase().includes(search) || item.mecanico.toLowerCase().includes(search) || item.modelo.toLowerCase().includes(search))
-    .sort((a, b) => (b.data || '').localeCompare(a.data || ''));
+  const dateFilter = document.getElementById('manut-date-filter')?.value || '';
+  const startInput = document.getElementById('manut-date-start');
+  const endInput = document.getElementById('manut-date-end');
+  const { startDate, endDate } = getDateRange(dateFilter, startInput?.value, endInput?.value);
+  return getList().filter((item) => {
+    const searchable = `${JSON.stringify(item)} ${fmtDate(item.data)} ${statusLabel()[item.status] || item.status}`.toLowerCase();
+    return (!search || searchable.includes(search))
+      && (!startDate || (item.data || '') >= startDate)
+      && (!endDate || (item.data || '') <= endDate);
+  }).sort((a, b) => (b.data || '').localeCompare(a.data || ''));
+}
+
+function getDateRange(filter, customStart, customEnd) {
+  if (filter === 'custom') return { startDate: customStart || '', endDate: customEnd || '' };
+  if (!filter) return { startDate: '', endDate: '' };
+  const today = new Date();
+  const current = today.toISOString().slice(0, 10);
+  if (filter === 'today') return { startDate: current, endDate: current };
+  if (filter === '7days') {
+    const start = new Date(today);
+    start.setDate(today.getDate() - 6);
+    return { startDate: start.toISOString().slice(0, 10), endDate: current };
+  }
+  if (filter === 'month') return { startDate: `${current.slice(0, 7)}-01`, endDate: current };
+  const previous = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+  return { startDate: previous.toISOString().slice(0, 10), endDate: new Date(today.getFullYear(), today.getMonth(), 0).toISOString().slice(0, 10) };
 }
 
 function exportReport(type, comment = '') {
@@ -269,6 +289,10 @@ function deleteItem(id) {
 export function initManutencao() {
   const addButton = document.getElementById('btn-add-manut');
   const searchInput = document.getElementById('manut-search');
+  const dateFilter = document.getElementById('manut-date-filter');
+  const customDates = document.getElementById('manut-date-custom');
+  const startDate = document.getElementById('manut-date-start');
+  const endDate = document.getElementById('manut-date-end');
   const tbody = document.getElementById('manut-tbody');
 
   if (addButton) {
@@ -282,6 +306,9 @@ export function initManutencao() {
   }
 
   if (searchInput) searchInput.addEventListener('input', renderAll);
+  if (dateFilter) dateFilter.addEventListener('change', () => { customDates.hidden = dateFilter.value !== 'custom'; renderAll(); });
+  if (startDate) startDate.addEventListener('change', renderAll);
+  if (endDate) endDate.addEventListener('change', renderAll);
 
   if (tbody) {
     tbody.addEventListener('click', (event) => {

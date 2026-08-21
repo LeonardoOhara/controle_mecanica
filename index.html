@@ -123,7 +123,14 @@
       <section class="panel" id="panel-manutencao">
         <div class="stats-row" id="manut-stats"></div>
         <div class="toolbar">
-          <div class="grow"><input class="search-input" id="manut-search" placeholder="Buscar por nome, mecânico ou modelo..."></div>
+          <div class="grow"><input class="search-input" id="manut-search" placeholder="Buscar em qualquer informação..." aria-label="Buscar em qualquer informação"></div>
+          <select class="filter-select date-filter" id="manut-date-filter" aria-label="Filtrar por data">
+            <option value="">Todas as datas</option><option value="today">Hoje</option><option value="7days">Últimos 7 dias</option><option value="month">Este mês</option><option value="previous-month">Mês anterior</option><option value="custom">Personalizado</option>
+          </select>
+          <div class="date-custom" id="manut-date-custom" hidden>
+            <input class="search-input date-filter" id="manut-date-start" type="date" aria-label="Data inicial" title="Data inicial">
+            <input class="search-input date-filter" id="manut-date-end" type="date" aria-label="Data final" title="Data final">
+          </div>
           <div class="toolbar-actions">
             <button class="btn-import report-dropzone" type="button" data-panel="manutencao">Importar ou arrastar</button>
             <input class="report-file" data-panel="manutencao" type="file" accept=".pdf,.xlsx,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
@@ -144,7 +151,14 @@
       <section class="panel" id="panel-bikes">
         <div class="stats-row" id="bikes-stats"></div>
         <div class="toolbar">
-          <div class="grow"><input class="search-input" id="bikes-search" placeholder="Buscar por código ou modelo..."></div>
+          <div class="grow"><input class="search-input" id="bikes-search" placeholder="Buscar em qualquer informação..." aria-label="Buscar em qualquer informação"></div>
+          <select class="filter-select date-filter" id="bikes-date-filter" aria-label="Filtrar por data">
+            <option value="">Todas as datas</option><option value="today">Hoje</option><option value="7days">Últimos 7 dias</option><option value="month">Este mês</option><option value="previous-month">Mês anterior</option><option value="custom">Personalizado</option>
+          </select>
+          <div class="date-custom" id="bikes-date-custom" hidden>
+            <input class="search-input date-filter" id="bikes-date-start" type="date" aria-label="Data inicial" title="Data inicial">
+            <input class="search-input date-filter" id="bikes-date-end" type="date" aria-label="Data final" title="Data final">
+          </div>
           <div class="toolbar-actions">
             <button class="btn-import report-dropzone" type="button" data-panel="bikes">Importar ou arrastar</button>
             <input class="report-file" data-panel="bikes" type="file" accept=".pdf,.xlsx,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
