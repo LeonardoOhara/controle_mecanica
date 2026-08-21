@@ -101,7 +101,7 @@ function fieldsHtml(data = {}) {
 }
 
 function renderStats() {
-  const list = getList();
+  const list = getFilteredList();
   const totalQuantidade = list.reduce((sum, item) => sum + (Number(item.quantidade) || 0), 0);
   const normalQuantidade = list
     .filter((item) => analyzeBattery(item).health === 'normal')

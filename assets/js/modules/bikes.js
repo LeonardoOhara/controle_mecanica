@@ -16,7 +16,7 @@ function bikeFieldsHtml(data = {}) {
 }
 
 function renderStats() {
-  const list = getList();
+  const list = getFilteredList();
   const pieces = list.reduce((total, bike) => total + (bike.pecas || []).length, 0);
   const movements = list.reduce((total, bike) => total + (bike.historico || []).length, 0);
   document.getElementById('bikes-stats').innerHTML = `
@@ -89,7 +89,14 @@ function parseCollection(value, fallback = []) {
 }
 
 function exportReport(type, comment = '') {
-  const rows = getFilteredList().map((bike) => ({
+  const reportBikes = getFilteredList();
+  const movements = reportBikes.flatMap((bike) => bike.historico || []);
+  const summary = {
+    bikes: reportBikes.length,
+    removedPieces: movements.filter((move) => move.acao === 'retirada').length,
+    installedPieces: movements.filter((move) => move.acao === 'colocada').length
+  };
+  const rows = reportBikes.map((bike) => ({
     Data: fmtDate(bike.data),
     Código: bike.codigo,
     Modelo: bike.modelo,
@@ -107,7 +114,7 @@ function exportReport(type, comment = '') {
     }
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: 'landscape' });
-    const pdfRows = getFilteredList().flatMap((bike) => {
+    const pdfRows = reportBikes.flatMap((bike) => {
       const history = bike.historico || [];
       const movements = history.length ? history : [{}];
       return movements.map((move) => ({
@@ -126,13 +133,15 @@ function exportReport(type, comment = '') {
     doc.text('Relatório de Controle de Bikes', 14, 16);
     doc.setFontSize(10);
     doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 14, 24);
+    const summaryText = `Resumo: Bikes cadastradas: ${summary.bikes} | Peças retiradas: ${summary.removedPieces} | Peças instaladas: ${summary.installedPieces}`;
+    doc.text(summaryText, 14, 30);
     const commentLines = comment ? doc.splitTextToSize(`Comentário: ${comment}`, 270) : [];
-    if (commentLines.length) doc.text(commentLines, 14, 31);
+    if (commentLines.length) doc.text(commentLines, 14, 36);
     const headers = Object.keys(pdfRows[0]);
     doc.autoTable({
       head: [headers],
       body: pdfRows.map((row) => headers.map((header) => row[header] ?? '')),
-      startY: commentLines.length ? 35 + (commentLines.length - 1) * 5 : 30,
+      startY: commentLines.length ? 41 + (commentLines.length - 1) * 5 : 35,
       styles: { fontSize: 7, cellPadding: 1.5, overflow: 'linebreak' },
       headStyles: { fillColor: [245, 166, 35], textColor: [26, 18, 4], fontStyle: 'bold' },
       alternateRowStyles: { fillColor: [245, 245, 245] },
@@ -149,7 +158,9 @@ function exportReport(type, comment = '') {
     }
     const summaryRows = [
       { Item: 'Comentário', Quantidade: comment || '' },
-      { Item: 'Quantidade total', Quantidade: rows.length }
+      { Item: 'Bikes cadastradas', Quantidade: summary.bikes },
+      { Item: 'Peças retiradas', Quantidade: summary.removedPieces },
+      { Item: 'Peças instaladas', Quantidade: summary.installedPieces }
     ];
     const sheet = window.XLSX.utils.json_to_sheet(rows);
     const summarySheet = window.XLSX.utils.json_to_sheet(summaryRows);

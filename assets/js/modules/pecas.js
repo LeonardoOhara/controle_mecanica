@@ -35,7 +35,7 @@ function pecaFieldsHtml(data = {}) {
 }
 
 function renderStats() {
-  const list = getList();
+  const list = getFilteredList();
   const statusCount = (status) => list.filter((item) => (item.status || 'aguardando_envio') === status).length;
   const daysWithOrders = new Set(list.filter((item) => item.data).map((item) => item.data)).size;
   const averagePerDay = daysWithOrders ? (list.length / daysWithOrders).toFixed(1).replace('.', ',') : '0,0';

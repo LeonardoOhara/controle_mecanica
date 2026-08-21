@@ -42,7 +42,7 @@ function fieldsHtml(data = {}) {
 }
 
 function renderStats() {
-  const list = getList();
+  const list = getFilteredList();
   document.getElementById('manut-stats').innerHTML = `
     <div class="stat"><div class="n">${list.filter((item) => item.status === 'pendente').length}</div><div class="l">Pendentes</div></div>
     <div class="stat"><div class="n">${list.filter((item) => item.status === 'execucao').length}</div><div class="l">Em execução</div></div>
