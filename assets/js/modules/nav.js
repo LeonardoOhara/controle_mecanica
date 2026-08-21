@@ -10,9 +10,12 @@ export function bindNavigation() {
       panels.forEach((panel) => panel.classList.toggle('active', panel.id === `panel-${target}`));
 
       const titles = {
+        dashboard: ['Visão geral', 'Resumo operacional da oficina'],
         pecas: ['Envio de Peças', 'Rastreamento de pedidos enviados via Sedex'],
         manutencao: ['Manutenção de Bikes Elétricas', 'Ordens de serviço e status de execução'],
-        baterias: ['Teste de Baterias', 'Registro de resultados por data, tipo e status']
+        bikes: ['Controle de Bikes', 'Peças instaladas e histórico de movimentações'],
+        baterias: ['Teste de Baterias', 'Registro de resultados por data, tipo e status'],
+        diagrama: ['Diagrama Elétrico', 'Mapa técnico para diagnóstico de bikes elétricas']
       };
 
       const [title, subtitle] = titles[target] || ['Painel', ''];

@@ -1,5 +1,6 @@
 import { readStorage, writeStorage } from './storage.js';
 import { uid, formatDateDisplay, formatDateInput, parseDateInput, escapeHtml, openModal, showToast, fmtDate } from './utils.js';
+import { importedDate, importedValue, normalizeHeader, setupReportImport } from './importacao.js';
 
 const STORAGE_KEY = 'manutencoes';
 
@@ -87,7 +88,7 @@ function getFilteredList() {
     .sort((a, b) => (b.data || '').localeCompare(a.data || ''));
 }
 
-function exportReport(type) {
+function exportReport(type, comment = '') {
   const rows = getFilteredList().map((item) => ({
     Data: fmtDate(item.data),
     Cliente: item.nome,
@@ -113,6 +114,8 @@ function exportReport(type) {
     doc.text('Relatório de Manutenção de Bikes', 14, 16);
     doc.setFontSize(10);
     doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 14, 24);
+    const commentLines = comment ? doc.splitTextToSize(`Comentário: ${comment}`, 270) : [];
+    if (commentLines.length) doc.text(commentLines, 14, 31);
 
     const headers = Object.keys(rows[0]);
     const body = rows.map((row) => headers.map((header) => row[header] ?? ''));
@@ -120,7 +123,7 @@ function exportReport(type) {
     doc.autoTable({
       head: [headers],
       body,
-      startY: 30,
+      startY: commentLines.length ? 35 + (commentLines.length - 1) * 5 : 30,
       styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
       headStyles: { fillColor: [245, 166, 35], textColor: [26, 18, 4], fontStyle: 'bold' },
       alternateRowStyles: { fillColor: [245, 245, 245] },
@@ -138,12 +141,70 @@ function exportReport(type) {
       return;
     }
 
+    const summaryRows = [
+      { Item: 'Comentário', Quantidade: comment || '' },
+      { Item: 'Quantidade total', Quantidade: rows.length }
+    ];
+    const summarySheet = window.XLSX.utils.json_to_sheet(summaryRows);
     const sheet = window.XLSX.utils.json_to_sheet(rows);
     const workbook = window.XLSX.utils.book_new();
+    window.XLSX.utils.book_append_sheet(workbook, summarySheet, 'Resumo');
     window.XLSX.utils.book_append_sheet(workbook, sheet, 'Relatorio');
     window.XLSX.writeFile(workbook, 'relatorio-manutencao-bikes.xlsx');
     showToast('Arquivo .xlsx exportado.');
   }
+}
+
+function openReportDialog(type) {
+  openModal({
+    title: 'Gerar relatório de manutenção',
+    fieldsHtml: `
+      <div class="field">
+        <label>Comentário do relatório</label>
+        <textarea name="comentarioRelatorio" maxlength="1000" placeholder="Registre um comentário para este relatório" style="width:100%;min-height:96px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);padding:10px;border-radius:6px;"></textarea>
+      </div>
+    `,
+    onSubmit: (formData, close) => {
+      exportReport(type, String(formData.get('comentarioRelatorio') || '').trim());
+      close();
+    }
+  });
+}
+
+function importReport(rows) {
+  const labels = statusLabel();
+  const statusByLabel = Object.fromEntries(Object.entries(labels).map(([value, label]) => [normalizeHeader(label), value]));
+  const list = getList();
+  let added = 0;
+  let updated = 0;
+
+  rows.forEach((row) => {
+    const item = {
+      data: importedDate(importedValue(row, ['data'])),
+      nome: String(importedValue(row, ['cliente', 'nome'])).trim(),
+      mecanico: String(importedValue(row, ['mecanico', 'mecanico responsavel'])).trim(),
+      modelo: String(importedValue(row, ['modelo'])).trim(),
+      status: statusByLabel[normalizeHeader(importedValue(row, ['status']))] || 'pendente'
+    };
+    if (!item.data || !item.nome || !item.modelo) return;
+
+    const current = list.find((entry) => entry.data === item.data && entry.nome.toLowerCase() === item.nome.toLowerCase() && entry.modelo.toLowerCase() === item.modelo.toLowerCase());
+    if (current) {
+      Object.assign(current, item);
+      updated += 1;
+    } else {
+      list.push({ id: uid(), ...item });
+      added += 1;
+    }
+  });
+
+  if (!added && !updated) {
+    showToast('Nenhum registro válido encontrado no relatório.');
+    return;
+  }
+  saveList(list);
+  renderAll();
+  showToast(`${added} novo(s), ${updated} atualizado(s). Comentários ignorados.`);
 }
 
 function renderAll() {
@@ -233,8 +294,9 @@ export function initManutencao() {
   }
 
   document.querySelectorAll('.btn-export[data-panel="manutencao"]').forEach((button) => {
-    button.addEventListener('click', () => exportReport(button.dataset.type));
+    button.addEventListener('click', () => openReportDialog(button.dataset.type));
   });
+  setupReportImport({ panel: 'manutencao', onImport: importReport });
 
   renderAll();
 }

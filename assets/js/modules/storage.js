@@ -23,6 +23,7 @@ export function readStorage(key, fallback) {
 
 export function writeStorage(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
+  window.dispatchEvent(new CustomEvent('oficina:data-changed', { detail: { key } }));
 
   fetch(`/api/data/${encodeURIComponent(key)}`, {
     method: 'PUT',

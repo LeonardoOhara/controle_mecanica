@@ -1,5 +1,6 @@
 import { readStorage, writeStorage } from './storage.js';
 import { uid, formatDateDisplay, formatDateInput, parseDateInput, escapeHtml, openModal, showToast, fmtDate } from './utils.js';
+import { importedDate, importedValue, setupReportImport } from './importacao.js';
 
 const STORAGE_KEY = 'baterias';
 
@@ -283,6 +284,43 @@ function exportReport(type, comment = '') {
   }
 }
 
+function importReport(rows) {
+  const list = getList();
+  let added = 0;
+  let updated = 0;
+
+  rows.forEach((row) => {
+    const voltageText = String(importedValue(row, ['voltagem medida', 'voltagem'])).replace(',', '.').replace(/\s*v\s*$/i, '');
+    const item = {
+      data: importedDate(importedValue(row, ['data'])),
+      quantidade: Number(importedValue(row, ['quantidade'])) || 0,
+      marca: String(importedValue(row, ['marca'])).trim(),
+      tipo: String(importedValue(row, ['tipo'])).trim().toLowerCase(),
+      amperes: String(importedValue(row, ['amperes'])).trim(),
+      voltagem: Number(voltageText),
+      estadoMedicao: 'repouso'
+    };
+    if (!item.data || !item.marca || !REFERENCE_TABLES[item.tipo] || !Number.isFinite(item.voltagem)) return;
+
+    const current = list.find((entry) => entry.data === item.data && entry.marca.toLowerCase() === item.marca.toLowerCase() && entry.tipo === item.tipo && Number(entry.voltagem) === item.voltagem);
+    if (current) {
+      Object.assign(current, item);
+      updated += 1;
+    } else {
+      list.push({ id: uid(), ...item, observacao: '' });
+      added += 1;
+    }
+  });
+
+  if (!added && !updated) {
+    showToast('Nenhum registro válido encontrado no relatório.');
+    return;
+  }
+  saveList(list);
+  renderAll();
+  showToast(`${added} novo(s), ${updated} atualizado(s). Comentários ignorados.`);
+}
+
 function openReportDialog(type) {
   if (!getFilteredList().length) {
     showToast('Nenhum dado para exportar neste relatório.');
@@ -431,6 +469,7 @@ export function initBaterias() {
   document.querySelectorAll('.btn-export[data-panel="baterias"]').forEach((button) => {
     button.addEventListener('click', () => openReportDialog(button.dataset.type));
   });
+  setupReportImport({ panel: 'baterias', onImport: importReport });
 
   renderAll();
 }
